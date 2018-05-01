@@ -30,54 +30,6 @@
 
 #include "hb-open-type-private.hh"
 
-
-/*
- * Following parts to be moved to a public header.
- */
-
-/**
- * hb_ot_color_t:
- * ARGB data type for holding color values.
- *
- * Since: REPLACEME
- */
-typedef uint32_t hb_ot_color_t;
-
-
-/**
- * hb_ot_color_palette_flags_t:
- * @HB_OT_COLOR_PALETTE_FLAG_DEFAULT: default indicating that there is nothing special to note about a color palette.
- * @HB_OT_COLOR_PALETTE_FLAG_FOR_LIGHT_BACKGROUND: flag indicating that the color palette is suitable for rendering text on light background.
- * @HB_OT_COLOR_PALETTE_FLAG_FOR_DARK_BACKGROUND: flag indicating that the color palette is suitable for rendering text on dark background.
- *
- * Since: REPLACEME
- */
-typedef enum { /*< flags >*/
-  HB_OT_COLOR_PALETTE_FLAG_DEFAULT = 0x00000000u,
-  HB_OT_COLOR_PALETTE_FLAG_FOR_LIGHT_BACKGROUND = 0x00000001u,
-  HB_OT_COLOR_PALETTE_FLAG_FOR_DARK_BACKGROUND = 0x00000002u,
-} hb_ot_color_palette_flags_t;
-
-// HB_EXTERN unsigned int
-// hb_ot_color_get_palette_count (hb_face_t *face);
-
-// HB_EXTERN unsigned int
-// hb_ot_color_get_palette_name_id (hb_face_t *face, unsigned int palette);
-
-// HB_EXTERN hb_ot_color_palette_flags_t
-// hb_ot_color_get_palette_flags (hb_face_t *face, unsigned int palette);
-
-// HB_EXTERN unsigned int
-// hb_ot_color_get_palette_colors (hb_face_t       *face,
-// 				unsigned int     palette, /* default=0 */
-// 				unsigned int     start_offset,
-// 				unsigned int    *color_count /* IN/OUT */,
-// 				hb_ot_color_t   *colors /* OUT */);
-
-
-
-
-
 /*
  * CPAL -- Color Palette
  * https://docs.microsoft.com/en-us/typography/opentype/spec/cpal
@@ -103,12 +55,12 @@ struct CPALV1Tail
   }
 
   private:
-  inline hb_ot_color_palette_flags_t
-  get_palette_flags (const void *base, unsigned int palette) const
-  {
-    // range checked at the CPAL caller
-    return (hb_ot_color_palette_flags_t) (uint32_t) (base+paletteFlagsZ)[palette];
-  }
+  // inline hb_ot_color_palette_flags_t
+  // get_palette_flags (const void *base, unsigned int palette) const
+  // {
+  //   // range checked at the CPAL caller
+  //   return (hb_ot_color_palette_flags_t) (uint32_t) (base+paletteFlagsZ)[palette];
+  // }
 
   inline unsigned int
   get_palette_name_id (const void *base, unsigned int palette) const
@@ -166,14 +118,14 @@ struct CPAL
     return min_size + numPalettes * sizeof (HBUINT16);
   }
 
-  inline hb_ot_color_palette_flags_t get_palette_flags (unsigned int palette) const
-  {
-    if (unlikely (version == 0 || palette >= numPalettes))
-      return HB_OT_COLOR_PALETTE_FLAG_DEFAULT;
+  // inline hb_ot_color_palette_flags_t get_palette_flags (unsigned int palette) const
+  // {
+  //   if (unlikely (version == 0 || palette >= numPalettes))
+  //     return HB_OT_COLOR_PALETTE_FLAG_DEFAULT;
 
-    const CPALV1Tail& cpal1 = StructAfter<CPALV1Tail> (*this);
-    return cpal1.get_palette_flags (this, palette);
-  }
+  //   const CPALV1Tail& cpal1 = StructAfter<CPALV1Tail> (*this);
+  //   return cpal1.get_palette_flags (this, palette);
+  // }
 
   inline unsigned int get_palette_name_id (unsigned int palette) const
   {
@@ -189,7 +141,7 @@ struct CPAL
     return numPalettes;
   }
 
-  inline hb_ot_color_t
+  inline hb_color_t
   get_color_record_argb (unsigned int color_index, unsigned int palette) const
   {
     if (unlikely (color_index >= numPaletteEntries || palette >= numPalettes))
@@ -198,6 +150,34 @@ struct CPAL
     // No need for more range check as it is already done on #sanitize
     const UnsizedArrayOf<BGRAColor>& color_records = this+colorRecordsZ;
     return color_records[colorRecordIndicesZ[palette] + color_index];
+  }
+
+  inline unsigned int
+  get_palette_colors (unsigned int  palette,
+		      unsigned int  start_offset,
+		      unsigned int *color_count /* IN/OUT */,
+		      hb_color_t   *colors /* OUT */) const
+  {
+    if (unlikely (palette >= numPalettes))
+    {
+      if (color_count) *color_count = 0;
+      return 0;
+    }
+
+    unsigned int num_results = 0;
+    if (likely (color_count && colors))
+    {
+      const UnsizedArrayOf<BGRAColor>& color_records = this+colorRecordsZ;
+      unsigned int palette_offset = colorRecordIndicesZ[palette];
+      for (unsigned int i = start_offset; i < numPaletteEntries && num_results < *color_count; ++i)
+      {
+	colors[num_results] = color_records[palette_offset + i];
+	++num_results;
+      }
+    }
+
+    if (likely (color_count)) *color_count = num_results;
+    return numPaletteEntries;
   }
 
   protected:

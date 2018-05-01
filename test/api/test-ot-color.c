@@ -100,7 +100,7 @@ static hb_face_t *cpal_v1 = NULL;
 
 
 #define assert_color_rgba(colors, i, r, g, b, a) G_STMT_START {	\
-  const hb_ot_color_t *_colors = (colors); \
+  const hb_color_t *_colors = (colors); \
   const size_t _i = (i); \
   const uint8_t red = (r), green = (g), blue = (b), alpha = (a); \
   if (_colors[_i].red != red) { \
@@ -207,7 +207,7 @@ static void
 test_hb_ot_color_get_palette_colors_v0 (void)
 {
   unsigned int num_colors = hb_ot_color_get_palette_colors (cpal_v0, 0, 0, NULL, NULL);
-  hb_ot_color_t *colors = (hb_ot_color_t*) alloca (num_colors * sizeof (hb_ot_color_t));
+  hb_color_t *colors = (hb_color_t*) alloca (num_colors * sizeof (hb_color_t));
   size_t colors_size = num_colors * sizeof(*colors);
   g_assert_cmpint (num_colors, ==, 2);
 
@@ -255,7 +255,7 @@ test_hb_ot_color_get_palette_colors_v0 (void)
 static void
 test_hb_ot_color_get_palette_colors_v1 (void)
 {
-  hb_ot_color_t colors[3];
+  hb_color_t colors[3];
   unsigned int num_colors = hb_ot_color_get_palette_colors (cpal_v1, 0, 0, NULL, NULL);
   size_t colors_size = 3 * sizeof(*colors);
   g_assert_cmpint (num_colors, ==, 2);

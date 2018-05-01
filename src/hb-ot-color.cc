@@ -36,10 +36,6 @@
 #include "hb-ot-layout-private.hh"
 #include "hb-shaper-private.hh"
 
-#if 0
-HB_MARK_AS_FLAG_T (hb_ot_color_palette_flags_t)
-//HB_SHAPER_DATA_ENSURE_DECLARE(ot, face) Hmm?
-
 
 static inline const OT::COLR&
 _get_colr (hb_face_t *face)
@@ -57,7 +53,6 @@ _get_cpal (hb_face_t *face)
   return *(layout->cpal.get ());
 }
 
-
 /**
  * hb_ot_color_get_palette_count:
  * @face: a font face.
@@ -74,6 +69,47 @@ hb_ot_color_get_palette_count (hb_face_t *face)
   return cpal.get_palette_count ();
 }
 
+/**
+ * hb_ot_color_get_palette_colors:
+ * @face:         a font face.
+ * @palette:      the index of the color palette whose colors
+ *                are being requested.
+ * @start_offset: the index of the first color being requested.
+ * @color_count:  (inout) (optional): on input, how many colors
+ *                can be maximally stored into the @colors array;
+ *                on output, how many colors were actually stored.
+ * @colors: (array length=color_count) (optional):
+ *                an array of #hb_color_t records. After calling
+ *                this function, @colors will be filled with
+ *                the palette colors. If @colors is NULL, the function
+ *                will just return the number of total colors
+ *                without storing any actual colors; this can be used
+ *                for allocating a buffer of suitable size before calling
+ *                hb_ot_color_get_palette_colors() a second time.
+ *
+ * Retrieves the colors in a color palette.
+ *
+ * Returns: the total number of colors in the palette. All palettes in
+ * a font have the same number of colors. If @face has no colors, or if
+ * @palette is not between 0 and hb_ot_color_get_palette_count(),
+ * the result is zero.
+ *
+ * Since: REPLACEME
+ */
+unsigned int
+hb_ot_color_get_palette_colors (hb_face_t    *face,
+				unsigned int  palette, /* default=0 */
+				unsigned int  start_offset,
+				unsigned int *color_count /* IN/OUT */,
+				hb_color_t   *colors /* OUT */)
+{
+  const OT::CPAL& cpal = _get_cpal (face);
+  return cpal.get_palette_colors (palette, start_offset, color_count, colors);
+}
+
+#if 0
+HB_MARK_AS_FLAG_T (hb_ot_color_palette_flags_t)
+//HB_SHAPER_DATA_ENSURE_DECLARE(ot, face) Hmm?
 
 /**
  * hb_ot_color_get_palette_name_id:
@@ -108,76 +144,12 @@ hb_ot_color_get_palette_name_id (hb_face_t *face, unsigned int palette)
  * or if @palette is not between 0 and hb_ot_color_get_palette_count(),
  * the result is #HB_OT_COLOR_PALETTE_FLAG_DEFAULT.
  *
- * Since: REPLACEME
+ * Since: DONTREPLACEME
  */
 hb_ot_color_palette_flags_t
 hb_ot_color_get_palette_flags (hb_face_t *face, unsigned int palette)
 {
   const OT::CPAL& cpal = _get_cpal(face);
   return cpal.get_palette_flags (palette);
-}
-
-
-/**
- * hb_ot_color_get_palette_colors:
- * @face:         a font face.
- * @palette:      the index of the color palette whose colors
- *                are being requested.
- * @start_offset: the index of the first color being requested.
- * @color_count:  (inout) (optional): on input, how many colors
- *                can be maximally stored into the @colors array;
- *                on output, how many colors were actually stored.
- * @colors: (array length=color_count) (optional):
- *                an array of #hb_ot_color_t records. After calling
- *                this function, @colors will be filled with
- *                the palette colors. If @colors is NULL, the function
- *                will just return the number of total colors
- *                without storing any actual colors; this can be used
- *                for allocating a buffer of suitable size before calling
- *                hb_ot_color_get_palette_colors() a second time.
- *
- * Retrieves the colors in a color palette.
- *
- * Returns: the total number of colors in the palette. All palettes in
- * a font have the same number of colors. If @face has no colors, or if
- * @palette is not between 0 and hb_ot_color_get_palette_count(),
- * the result is zero.
- *
- * Since: REPLACEME
- */
-unsigned int
-hb_ot_color_get_palette_colors (hb_face_t       *face,
-				unsigned int     palette, /* default=0 */
-				unsigned int     start_offset,
-				unsigned int    *color_count /* IN/OUT */,
-				hb_ot_color_t   *colors /* OUT */)
-{
-  const OT::CPAL& cpal = _get_cpal(face);
-  if (unlikely (palette >= cpal.numPalettes))
-  {
-    if (color_count) *color_count = 0;
-    return 0;
-  }
-
-  const OT::ColorRecord* crec = &cpal.offsetFirstColorRecord (&cpal);
-  crec += cpal.colorRecordIndices[palette];
-
-  unsigned int num_results = 0;
-  if (likely (color_count && colors))
-  {
-    for (unsigned int i = start_offset;
-	 i < cpal.numPaletteEntries && num_results < *color_count; ++i)
-    {
-      hb_ot_color_t* result = &colors[num_results];
-      result->red = crec[i].red;
-      result->green = crec[i].green;
-      result->blue = crec[i].blue;
-      result->alpha = crec[i].alpha;
-      ++num_results;
-    }
-  }
-
-  if (likely (color_count)) *color_count = num_results;
-  return cpal.numPaletteEntries;
 }
 #endif

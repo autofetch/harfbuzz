@@ -23,6 +23,7 @@
  */
 
 #include "hb.h"
+#include "hb-ot.h"
 #include "hb-private.hh"
 #include "hb-ot-color-cbdt-table.hh"
 #include "hb-ot-color-colr-table.hh"
@@ -125,7 +126,7 @@ void colr_cpal_rendering (cairo_font_face_t *cairo_face, unsigned int upem, unsi
       extents.y_bearing -= extents.height / 20;
 
       // Render
-      unsigned int pallet_count = cpal->get_palette_count ();
+      unsigned int pallet_count = hb_ot_color_get_palette_count (face);
       for (unsigned int pallet = 0; pallet < pallet_count; ++pallet) {
 	char output_path[255];
 
